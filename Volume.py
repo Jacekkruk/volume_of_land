@@ -107,7 +107,7 @@ def is_point_inside_is_correcty(Azymut_A_min_d, Azymut_A_wsp_pktB, Azymut_A_wsp_
                     punkt = False
             else:
                 punkt = False
-        else:  # asumc gdy kąt jest mniejszy niż 200g:
+        else:  # assumption when trinagle less then 200g:
             if 0 < Azymut_A_min_d < Azymut_A_wsp_pktB or Azymut_A_wsp_pktC <= Azymut_A_min_d < math.radians(360):
                 punkt = True
             else:
@@ -136,6 +136,108 @@ def if_point_inside_triangle(x1, y1, x2, y2, x3, y3, xp, yp):
         return True
     else:
         return False
+
+
+
+
+
+
+    # ETAP 2 - CHECKING THE DIRECTION EXTERNAL CONTOUR
+
+
+    # checking the direction external contour. Count right triangle
+    # (1) Count right triangle for first point
+    # (2) Count right triangle for last point
+    # (3) Count right triangle for intermediate points
+
+
+    suma_kat = 0
+
+    for n, pkt in enumerate(wsp_low3):
+
+        # (1) Count right triangle for first point
+        #   Azimuth to next point
+        if n == 0:
+
+            Azymut_A_B = azymutA_B(wsp_low3[n][2], wsp_low3[n][1], wsp_low3[n + 1][2], wsp_low3[n + 1][1])
+
+            #   Azimuth to previous point
+            Azymut_A_Z = azymutA_B(wsp_low3[n][2], wsp_low3[n][1], wsp_low3[-1][2], wsp_low3[-1][1])
+
+            # Count right triangle for n =0
+            if (Azymut_A_Z - Azymut_A_B) > 0:
+                delta_Azymut = Azymut_A_Z - Azymut_A_B
+            else:
+                delta_Azymut = 2 * math.pi - Azymut_A_B + Azymut_A_Z
+            suma_kat += delta_Azymut
+
+
+        # (2) Count right triangle for last point
+        # Azimuth to next point (that is first)
+        elif n == (len(wsp_low3) - 1):
+
+            Azymut_A_B = azymutA_B(wsp_low3[n][2], wsp_low3[n][1], wsp_low3[0][2], wsp_low3[0][1])
+
+            # Azimuth to next point (that is penultimate - second last)
+
+            Azymut_A_Z = azymutA_B(wsp_low3[n][2], wsp_low3[n][1], wsp_low3[n - 1][2], wsp_low3[n - 1][1])
+
+            # Count right triangle for n  - last
+
+            if (Azymut_A_Z - Azymut_A_B) > 0:
+                delta_Azymut = Azymut_A_Z - Azymut_A_B
+            else:
+                delta_Azymut = 2 * math.pi - Azymut_A_B + Azymut_A_Z
+            suma_kat += delta_Azymut
+
+        else:
+            # (3) Count right triangle for intermediate points
+            # Azimuth to next point (that is  n+1)
+
+            Azymut_A_B = azymutA_B(wsp_low3[n][2], wsp_low3[n][1], wsp_low3[n + 1][2], wsp_low3[n + 1][1])
+
+            # Azimuth to previous point (that is  n-1)
+
+            Azymut_A_Z = azymutA_B(wsp_low3[n][2], wsp_low3[n][1], wsp_low3[n - 1][2], wsp_low3[n - 1][1])
+
+            # Count right triangle for n intermediate
+
+            if (Azymut_A_Z - Azymut_A_B) > 0:
+                delta_Azymut = Azymut_A_Z - Azymut_A_B
+            else:
+                delta_Azymut = 2 * math.pi - Azymut_A_B + Azymut_A_Z
+            suma_kat += delta_Azymut
+
+    # CHECKING THE DIRECTION EXTERNAL CONTOUR
+    # direction = 1 - right direction
+    # direction = 0 - left direction
+
+    if round(suma_kat, 5) == round((len(wsp_low3) - 2) * math.pi, 5):
+        direction = 1
+    elif round(suma_kat, 5) == round(2 * math.pi * len(wsp_low3) - math.pi * (len(wsp_low3) - 2), 5):
+        direction = 0
+    else:
+        direction = -1
+
+    # print direction
+    if direction == 1:
+        print('Right direction')
+    elif direction == 0:
+        print('Left direction')
+    else:
+        print('Something is wrong - check direction !!!')
+
+    # change direction to the right if it was left
+
+    if direction == 0:
+        wsp_low3 = wsp_low3[::-1]
+        print('Direction has been changed to right')
+
+    # END OF STAGE 2
+
+
+
+
 
 
 
