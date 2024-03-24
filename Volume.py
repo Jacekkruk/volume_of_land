@@ -247,7 +247,7 @@ copywsp_high3 = wsp_high3.copy()
 copywsp_low3.remove(wsp_pktA)
 copywsp_low3.remove(wsp_pktB)
 
-# ETAP 3 - CREATING NET LEAST SQUARES
+# ETAP 3 - CREATING NET LEAST TRIANGLE
 
 numer_petli = 1
 
@@ -399,7 +399,7 @@ while len(wsp_low3) > 3:
                 obrys_czy_punkt_nastepny = True
                 obrys_czy_punkt_poprzedni = False
 
-            elif min_d[2] == wsp_low3[-2][0] and triangle == False:  # TUTAJ ZMIENIŁEM BYŁO copywsp_low3[-1][0]
+            elif min_d[2] == wsp_low3[-2][0] and triangle == False:
                 triangle_list.append([min_d[2:], wsp_pktA, wsp_pktB])
                 print('new asumption works)
                 wsp_low3.pop(-1)
@@ -468,10 +468,132 @@ if len(wsp_low3) == 3:
 
 # END STAGE 3 - WE HAVE TRIANGLES
 
+# STAGE 4 IMPORT TO AUTOCAD NET TRIANGLE
+# REMMEMBER: Autocad file must be in folder and it must be open
+
+from pyautocad import Autocad, APoint
+
+acad = Autocad(create_if_not_exists=True)
+
+for trian in triangle_list:
+# triangles point
+    punkt_1 = APoint(float(trian[0][2]), float(trian[0][1]), float(trian[0][3]))
+punkt_2 = APoint(float(trian[1][2]), float(trian[1][1]), float(trian[1][3]))
+punkt_3 = APoint(float(trian[2][2]), float(trian[2][1]), float(trian[2][3]))
+acad.model.AddLine(punkt_1, punkt_2)
+acad.model.AddLine(punkt_1, punkt_3)
+acad.model.AddLine(punkt_2, punkt_3)
+acad.app.ZoomExtents()
+#    acad.model.AddPoint(punkt_1)
+
+#                            STAGE 5 CALCULATION OF HEIGHT POINTS
+
+'''We calculate the height of a point by calculating the distance to each point from external contour,
+   the longest distance has a weight of 1, while the weights of the remaining points are
+   the quotient of the longest distance and the distance to a given next point on the contour
+'''
+
+def spr_czy_pkt_nalezy_do_obrysu(punkt):
+    flag = False
+    for i in wsp_low_for_high:
+        if i[0] == punkt[0]:
+            flag = True
+            break
+    if flag == True:
+        return True  # if point from contour
+    else:
+        return False  # if point from inside
 
 
+# calculation list with added variable - is_point_contour(TRUE) is_point_inside(FALSE)
+)
+
+triangle_list_with_true_false = list(
+    map(lambda x: [[x[0][0], x[0][1], x[0][2], x[0][3], spr_czy_pkt_nalezy_do_obrysu(x[0])],
+                   [x[1][0], x[1][1], x[1][2], x[1][3], spr_czy_pkt_nalezy_do_obrysu(x[1])],
+                   [x[2][0], x[2][1], x[2][2], x[2][3], spr_czy_pkt_nalezy_do_obrysu(x[2])]],
+        triangle_list))
 
 
+# calculation list with added variable - height references in given point
+def obl_reference_level(punkt):
+
+    high = punkt[4]
+    if high == True:
+        return punkt[3]
+    else:
+        distances = list(map(lambda x: [x[0], (
+                    (float(x[1]) - float(punkt[1])) ** 2 + (float(x[2]) - float(punkt[2])) ** 2) ** (
+                                                    1 / 2), x[3]], wsp_low_for_high))
+        dist_maximum = 0
+        for i in distances:
+            if i[1] > dist_maximum:
+                dist_maximum = i[1]
+
+        distances_waga = list(map(lambda x: [x[0], x[1], x[2], dist_maximum / x[1]], distances))
+
+        suma_iloczynow = 0
+        suma_wag = 0
+        for i in distances_waga:
+            suma_iloczynow += float(i[2]) * i[3]
+            suma_wag += i[3]
+        return suma_iloczynow / suma_wag
+
+
+# List of triangles with height and references height in given point
+
+triangle_list_with_reference_level = list(
+    map(lambda x: [[x[0][0], x[0][1], x[0][2], x[0][3], obl_reference_level(x[0])],
+                   [x[1][0], x[1][1], x[1][2], x[1][3], obl_reference_level(x[1])],
+                   [x[2][0], x[2][1], x[2][2], x[2][3], obl_reference_level(x[2])]],
+        triangle_list_with_true_false))
+
+# END STAGE 5
+
+
+#                            STEGE 6 calculating the area of a triangle
+
+# We use the formula for the area of a triangle
+# P 1/2 |(Xb-Xa)(Yc-Ya)-(Xc-Xa)(Yb-Ya)|
+
+def area(xa, ya, xb, yb, xc, yc):
+    area = abs(((xb - xa) * (yc - ya) - (xc - xa) * (yb - ya)) / 2)
+    return area
+
+
+# List of triangles with height and references height in given point and area
+# point [point A, X, Y, Z, Z_reference],[point B, X, Y, Z, Z_reference],
+#                                        [point C, X, Y, Z, Z_reference], Area)
+
+triangle_list_with_reference_level_and_area = []
+
+for i in triangle_list_with_reference_level:
+    i.append(area(float(i[0][1]), float(i[0][2]),
+                  float(i[1][1]), float(i[1][2]),
+                  float(i[2][1]), float(i[2][2])))
+    triangle_list_with_reference_level_and_area.append(i)
+
+#                            STAGE 7 Calculate volume of triangles
+
+triangle_list_with_reference_level_area_and_volume = []
+
+for i in triangle_list_with_reference_level_and_area:
+    avarage_z = (float(i[0][3]) + float(i[1][3]) + float(i[2][3])) / 3
+    avarage_references_level = (float(i[0][4]) + float(i[1][4]) + float(i[2][4])) / 3
+    delta_z = avarage_z - avarage_references_level
+    volume = delta_z * i[3]
+    i.append(volume)
+    triangle_list_with_reference_level_area_and_volume.append(i)
+
+#                            STAGE 8 Sum of volume
+
+volume = 0
+
+for i in triangle_list_with_reference_level_area_and_volume:
+    volume += i[4]
+
+print(30 * '*')
+print(volume)
 
 
 
