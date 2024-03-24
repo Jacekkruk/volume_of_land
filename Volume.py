@@ -71,22 +71,22 @@ def azymutA_B(Xa, Ya, Xb, Yb):  # Coordinates x in mathematical system (approx  
     return Azymut_A_B
 
 
-def is_point_belong_outline(min_d, wsp_low3):
-    outline = False
+def Czy_punkt_nalezy_do_obrysu(min_d, wsp_low3):
+    obrys = False
     for point in wsp_low3:
         if point[0] == min_d[2]:
-            outline = True
+            obrys = True
             print('Uwaga punkt z obrysu- obrys = true')
-            return outline
-    if outline == False:
-        return outline
+            return obrys
+    if obrys == False:
+        return obrys
 
 
-def is_point_inside_is_correcty(Azymut_A_min_d, Azymut_A_wsp_pktB, Azymut_A_wsp_pktC):
+def spradzenie_czy_punkt_wewnatrz_poprawny(Azymut_A_min_d, Azymut_A_wsp_pktB, Azymut_A_wsp_pktC):
     if Azymut_A_wsp_pktC > Azymut_A_wsp_pktB:
-        # assumption nr 1: Azimuth AC greater then AB
+        # Założenie nr 1: Azymut AC większy AB
         if (math.radians(360) - Azymut_A_wsp_pktC + Azymut_A_wsp_pktB) > math.radians(
-                180):  # assumption that angle greater then 200g
+                180):  # założenie ze kąt wiekszy niż 200g
             if Azymut_A_wsp_pktB > math.radians(180) and Azymut_A_min_d > Azymut_A_wsp_pktB - math.radians(
                     180) and Azymut_A_min_d < Azymut_A_wsp_pktB:
 
@@ -99,13 +99,13 @@ def is_point_inside_is_correcty(Azymut_A_min_d, Azymut_A_wsp_pktB, Azymut_A_wsp_
                     punkt = False
             else:
                 punkt = False
-        else:  # assumption when trinagle less then 200g:
+        else:  # założenia gdy kąt jest mniejszy niż 200g:
             if 0 < Azymut_A_min_d < Azymut_A_wsp_pktB or Azymut_A_wsp_pktC <= Azymut_A_min_d < math.radians(360):
                 punkt = True
             else:
                 punkt = False
     else:
-        # Assumption nr 2: Azimuth AC less then AB
+        # Założenie nr 2: Azymut AC mniejszy AB
         if (Azymut_A_wsp_pktB - Azymut_A_wsp_pktC) > math.radians(180):
             if Azymut_A_wsp_pktB - math.radians(180) < Azymut_A_min_d < Azymut_A_wsp_pktB:
                 punkt = True
@@ -401,7 +401,7 @@ while len(wsp_low3) > 3:
 
             elif min_d[2] == wsp_low3[-2][0] and triangle == False:
                 triangle_list.append([min_d[2:], wsp_pktA, wsp_pktB])
-                print('new asumption works)
+                print('new asumption works')
                 wsp_low3.pop(-1)
                 obrys_czy_punkt_poprzedni = True
                 obrys_czy_punkt_nastepny = False
@@ -471,18 +471,17 @@ if len(wsp_low3) == 3:
 # STAGE 4 IMPORT TO AUTOCAD NET TRIANGLE
 # REMMEMBER: Autocad file must be in folder and it must be open
 
-from pyautocad import Autocad, APoint
-
+from pyautocad import (Autocad, APoint)
 acad = Autocad(create_if_not_exists=True)
 
 for trian in triangle_list:
 # triangles point
     punkt_1 = APoint(float(trian[0][2]), float(trian[0][1]), float(trian[0][3]))
-punkt_2 = APoint(float(trian[1][2]), float(trian[1][1]), float(trian[1][3]))
-punkt_3 = APoint(float(trian[2][2]), float(trian[2][1]), float(trian[2][3]))
-acad.model.AddLine(punkt_1, punkt_2)
-acad.model.AddLine(punkt_1, punkt_3)
-acad.model.AddLine(punkt_2, punkt_3)
+    punkt_2 = APoint(float(trian[1][2]), float(trian[1][1]), float(trian[1][3]))
+    punkt_3 = APoint(float(trian[2][2]), float(trian[2][1]), float(trian[2][3]))
+    acad.model.AddLine(punkt_1, punkt_2)
+    acad.model.AddLine(punkt_1, punkt_3)
+    acad.model.AddLine(punkt_2, punkt_3)
 acad.app.ZoomExtents()
 #    acad.model.AddPoint(punkt_1)
 
@@ -506,7 +505,7 @@ def spr_czy_pkt_nalezy_do_obrysu(punkt):
 
 
 # calculation list with added variable - is_point_contour(TRUE) is_point_inside(FALSE)
-)
+
 
 triangle_list_with_true_false = list(
     map(lambda x: [[x[0][0], x[0][1], x[0][2], x[0][3], spr_czy_pkt_nalezy_do_obrysu(x[0])],
@@ -593,7 +592,7 @@ for i in triangle_list_with_reference_level_area_and_volume:
     volume += i[4]
 
 print(30 * '*')
-print(volume)
+print(' Finish volume :', round(volume,2))
 
 
 
