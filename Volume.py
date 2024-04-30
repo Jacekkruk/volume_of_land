@@ -471,7 +471,7 @@ if len(wsp_low3) == 3:
 # STAGE 4 IMPORT TO AUTOCAD NET TRIANGLE
 # REMMEMBER: Autocad file must be in folder and it must be open
 
-from pyautocad import (Autocad, APoint)
+'''from pyautocad import (Autocad, APoint)
 acad = Autocad(create_if_not_exists=True)
 
 for trian in triangle_list:
@@ -483,7 +483,7 @@ for trian in triangle_list:
     acad.model.AddLine(punkt_1, punkt_3)
     acad.model.AddLine(punkt_2, punkt_3)
 acad.app.ZoomExtents()
-#    acad.model.AddPoint(punkt_1)
+#    acad.model.AddPoint(punkt_1)'''
 
 #                            STAGE 5 CALCULATION OF HEIGHT POINTS
 
